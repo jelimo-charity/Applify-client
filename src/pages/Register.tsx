@@ -1,125 +1,153 @@
-import React, { useState} from 'react';
-import {useFormik} from 'formik';
-import * as Yup from 'yup';
+import React, { useState } from 'react';
 import Logo from '../components/Logo';
-import './register.css'
+import axios from 'axios';
+import './register.css';
 
-
-const Register: React.FC= () => {
- const [isRegistered, setIsRegistered] = useState(false);
-
- const toggleForm = () => {
-  setIsRegistered(!isRegistered);
- }
- const validationSchema = Yup.object().shape({
-  isRegistered: Yup.boolean(),
-  name: Yup.string().when('isRegistered', {
-    is: false,
-    then: Yup.string().required('Name is required'),
-    otherwise: Yup.string(),
-  }),
-  email: Yup.string().email('Invalid email format').required('Email is required'),
-  password: Yup.string().min(6, 'Password must be at least 6 characters').required('Password is required'),
-});
- const formik = useFormik({
-  initialValues:{
-    name: '',
+const Register: React.FC = () => {
+  const [isRegistered, setIsRegistered] = useState(false);
+  const [formValues, setFormValues] = useState({
+    firstName: '',
+    lastName: '',
     email: '',
     password: '',
-  },
-  validationSchema,
-  onSubmit: (values) =>{
-    console.log(values);
-  }
- });
+  });
+  const [formErrors, setFormErrors] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+  });
+
+  const toggleForm = () => {
+    setIsRegistered(!isRegistered);
+    setFormValues({ firstName: '', lastName: '', email: '', password: '' });
+    setFormErrors({ firstName: '', lastName: '', email: '', password: '' });
+  };
+
+  const validate = () => {
+    let errors = { firstName: '', lastName: '', email: '', password: '' };
+    if (!isRegistered) {
+      if (!formValues.firstName) errors.firstName = 'First name is required';
+      if (!formValues.lastName) errors.lastName = 'Last name is required';
+    }
+    if (!formValues.email) {
+      errors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(formValues.email)) {
+      errors.email = 'Invalid email format';
+    }
+    if (!formValues.password) {
+      errors.password = 'Password is required';
+    } else if (formValues.password.length < 6) {
+      errors.password = 'Password must be at least 6 characters';
+    }
+    setFormErrors(errors);
+    return !Object.values(errors).some((error) => error);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormValues({ ...formValues, [name]: value });
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (validate()) {
+      try {
+        const response = await axios.post('http://localhost:5000/register', formValues);
+        alert(response.data.message);
+        console.log(response.data);
+      } catch (error: any) {
+        alert(error.response?.data.message || 'Error occurred!');
+        console.error(error);
+      }
+    }
+  };
+
   return (
     <div className="register_container">
       <div className="card">
         <div className="logo">
-          <Logo/>
-          
+          <Logo />
         </div>
         {isRegistered ? (
           <>
-          <h2>Login</h2>
-          <form onSubmit={formik.handleSubmit}>
-            <div className="form-group">
-              <label>Email</label>
-              <input 
-              type="email" 
-              name='email'
-              value={formik.values.email}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              required/>
-              {formik.touched.password && formik.errors.password ?(
-                <div className="error">{formik.errors.password}</div>
-              ): null}
-            </div>
-            <div className="form-group">
+            <h2>Login</h2>
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label>Email</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={formValues.email}
+                  onChange={handleChange}
+                  required
+                />
+                {formErrors.email && <div className="error">{formErrors.email}</div>}
+              </div>
+              <div className="form-group">
                 <label>Password</label>
                 <input
                   type="password"
                   name="password"
-                  value={formik.values.password}
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
+                  value={formValues.password}
+                  onChange={handleChange}
                   required
                 />
-                {formik.touched.password && formik.errors.password ? (
-                  <div className="error">{formik.errors.password}</div>
-                ) : null}
+                {formErrors.password && <div className="error">{formErrors.password}</div>}
               </div>
-            <button type='submit' className='btn primary'>Login</button>
-          </form>
-          <p>
+              <button type="submit" className="btn primary">Login</button>
+            </form>
+            <p>
               Don't have an account? <button onClick={toggleForm} className="link-button">Register</button>
             </p>
           </>
-        ):(
+        ) : (
           <>
             <h2>Register</h2>
-            <form onSubmit={formik.handleSubmit}>
+            <form onSubmit={handleSubmit}>
               <div className="form-group">
-                    <label>Name</label>
-                    <input
-                     type="text"
-                      name='name'
-                      value={formik.values.name}
-                      onChange={formik.handleChange}
-                      onBlur={formik.handleBlur}
-                      required
-                      />
-                      {formik.touched.name && formik.errors.name ? (
-                  <div className="error">{formik.errors.name}</div>
-                ) : null}
+                <label>First Name</label>
+                <input
+                  type="text"
+                  name="firstName"
+                  value={formValues.firstName}
+                  onChange={handleChange}
+                  required={!isRegistered}
+                />
+                {formErrors.firstName && <div className="error">{formErrors.firstName}</div>}
               </div>
               <div className="form-group">
-              <label>Email</label>
-              <input 
-              type="email" 
-              name='email'
-              value={formik.values.email}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              required/>
-              {formik.touched.password && formik.errors.password ?(
-                <div className="error">{formik.errors.password}</div>
-              ): null}
-            </div>
+                <label>Last Name</label>
+                <input
+                  type="text"
+                  name="lastName"
+                  value={formValues.lastName}
+                  onChange={handleChange}
+                  required={!isRegistered}
+                />
+                {formErrors.lastName && <div className="error">{formErrors.lastName}</div>}
+              </div>
+              <div className="form-group">
+                <label>Email</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={formValues.email}
+                  onChange={handleChange}
+                  required
+                />
+                {formErrors.email && <div className="error">{formErrors.email}</div>}
+              </div>
               <div className="form-group">
                 <label>Password</label>
-                <input 
-                type="password"
-                name='password'
-                value={formik.values.password}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                required
+                <input
+                  type="password"
+                  name="password"
+                  value={formValues.password}
+                  onChange={handleChange}
+                  required
                 />
-                 {formik.touched.password && formik.errors.password ? (
-                  <div className="error">{formik.errors.password}</div>
-                ) : null}
+                {formErrors.password && <div className="error">{formErrors.password}</div>}
               </div>
               <button type="submit" className="btn primary">Submit</button>
             </form>
@@ -127,13 +155,10 @@ const Register: React.FC= () => {
               Already a member? <button onClick={toggleForm} className="link-button">Login</button>
             </p>
           </>
-          
-
         )}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Register
-
+export default Register;
