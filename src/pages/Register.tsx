@@ -25,7 +25,7 @@ const Register: React.FC = () => {
   };
 
   const validate = () => {
-    let errors = { firstName: '', lastName: '', email: '', password: '' };
+   const errors = { firstName: '', lastName: '', email: '', password: '' };
     if (!isRegistered) {
       if (!formValues.firstName) errors.firstName = 'First name is required';
       if (!formValues.lastName) errors.lastName = 'Last name is required';
